@@ -1,28 +1,67 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion } from "motion/react"
 import { FcGoogle } from "react-icons/fc";
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { auth, provider } from '../utils/firebase';
 import axios from "axios"
 import { serverUrl } from '../App';
 import { useDispatch } from 'react-redux';
 import { setUserData } from '../redux/userSlice';
+
 function Auth() {
   const dispatch = useDispatch()
+  const [loading, setLoading] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
+
+  const handleGoogleResponse = async (user) => {
+    const name = user.displayName
+    const email = user.email
+    const result = await axios.post(serverUrl + "/api/auth/google" , {name , email},{
+      withCredentials:true
+    })
+    dispatch(setUserData(result.data))
+  }
+
+  useEffect(() => {
+    const checkRedirect = async () => {
+      try {
+        const response = await getRedirectResult(auth)
+        if (response?.user) {
+          setLoading(true)
+          await handleGoogleResponse(response.user)
+        }
+      } catch (error) {
+        console.error("Redirect auth error:", error)
+        setErrorMsg("Failed to sign in. Please try again.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    checkRedirect()
+  }, [dispatch])
 
   const handleGoogleAuth = async () => {
-    
+    setErrorMsg("")
+    setLoading(true)
     try {
-      const response = await signInWithPopup(auth,provider)
-      const User = response.user
-      const name = User.displayName
-      const email = User.email
-      const result = await axios.post(serverUrl + "/api/auth/google" , {name , email},{
-        withCredentials:true
-      })
-      dispatch(setUserData(result.data))
+      const response = await signInWithPopup(auth, provider)
+      if (response?.user) {
+        await handleGoogleResponse(response.user)
+      }
     } catch (error) {
-      console.log(error)
+      console.log("Popup sign in error:", error)
+      if (error.code === 'auth/popup-blocked') {
+        try {
+          await signInWithRedirect(auth, provider)
+        } catch (redirectError) {
+          console.error("Redirect auth error:", redirectError)
+          setErrorMsg("Popup blocked and redirect failed. Please enable popups or try a different browser.")
+          setLoading(false)
+        }
+      } else {
+        setErrorMsg("Sign in failed. Please try again.")
+        setLoading(false)
+      }
     }
   }
   return (
@@ -61,25 +100,28 @@ function Auth() {
               </h1>
               <motion.button
               onClick={handleGoogleAuth}
-              whileHover={{
+              disabled={loading}
+              whileHover={loading ? {} : {
                 y:-10,
                 rotateX:8,
                 rotateY:-8,
                 scale:1.07
               }}
-              whileTap={{scale:0.97}}
+              whileTap={loading ? {} : {scale:0.97}}
               transition={{ type: "spring", stiffness: 200, damping: 18 }}
-               className='mt-10 px-10 py-3 rounded-xl
+               className={`mt-10 px-10 py-3 rounded-xl
               flex items-center gap-3
               bg-gradient-to-br from-black/90 via-black/80 to-black/90
               border border-white/10
               text-white font-semibold text-lg
-              shadow-[0_25px_60px_rgba(0,0,0,0.7)]'>
+              shadow-[0_25px_60px_rgba(0,0,0,0.7)] ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}>
                 <FcGoogle size={22}/>
-                Continue with Google
-
-
+                {loading ? "Signing in..." : "Continue with Google"}
               </motion.button>
+
+              {errorMsg && (
+                <p className="mt-3 text-red-500 text-sm font-medium">{errorMsg}</p>
+              )}
 
               <p className=' mt-6 max-w-xl text-lg
               bg-gradient-to-br from-gray-700 via-gray-500/80 to-gray-700
