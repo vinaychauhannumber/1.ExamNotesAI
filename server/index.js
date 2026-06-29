@@ -8,19 +8,12 @@ import userRouter from "./routes/user.route.js"
 import notesRouter from "./routes/genrate.route.js"
 import pdfRouter from "./routes/pdf.route.js"
 import creditRouter from "./routes/credits.route.js"
-import { stripeWebhook } from "./controllers/credits.controller.js"
 dotenv.config()
 
 
 
 
 const app = express()
-
-app.post(
-  "/api/credits/webhook",
-  express.raw({ type: "application/json" }),
-  stripeWebhook
-);
 
 app.use(cors(
     {origin: process.env.CLIENT_URL || "http://localhost:5173",
