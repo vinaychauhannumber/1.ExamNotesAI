@@ -2,7 +2,7 @@
   "name": "examnotes-root",
   "private": true,
   "scripts": {
-    "build": "cd client && npm install && npm run build"
+    "build": "cd client && npm install && npm run build && cp -R dist ../dist"
   },
   "dependencies": {
     "cookie-parser": "^1.4.7",
