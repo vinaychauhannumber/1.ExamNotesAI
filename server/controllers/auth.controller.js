@@ -14,10 +14,11 @@ export const googleAuth = async (req,res) => {
         }
         let token = await getToken(user._id)
        
+        const isProd = process.env.NODE_ENV === "production"
         res.cookie("token", token, {
             httpOnly: true,
-            secure: true,           // false on localhost (HTTP)
-            sameSite: none,
+            secure: isProd,
+            sameSite: isProd ? "none" : "lax",
             maxAge: 7 * 24 * 60 * 60 * 1000
         })
         return res.status(200).json(user)
