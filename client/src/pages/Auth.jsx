@@ -42,15 +42,17 @@ function Auth() {
 
   const handleGoogleAuth = async () => {
     setErrorMsg("")
-    setLoading(true)
     try {
+      // Open popup FIRST before any state changes that could break the gesture chain
       const response = await signInWithPopup(auth, provider)
+      setLoading(true)
       if (response?.user) {
         await handleGoogleResponse(response.user)
       }
     } catch (error) {
       console.log("Popup sign in error:", error)
       if (error.code === 'auth/popup-blocked') {
+        // Fall back to redirect if popup is blocked
         try {
           await signInWithRedirect(auth, provider)
         } catch (redirectError) {
