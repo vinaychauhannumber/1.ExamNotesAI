@@ -1,6 +1,7 @@
 {
   "name": "examnotes-root",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "cd client && npm install && npm run build && cp -R dist ../dist"
   },
