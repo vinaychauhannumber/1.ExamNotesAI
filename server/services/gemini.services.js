@@ -19,7 +19,11 @@ export const generateGeminiResponse = async (prompt) => {
                 }
               ]
             }
-          ]
+          ],
+          generationConfig: {
+            response_mime_type: "application/json",
+            maxOutputTokens: 8192
+          }
         })
 
     });
