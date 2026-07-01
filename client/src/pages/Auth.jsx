@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { motion } from "motion/react"
 import { FcGoogle } from "react-icons/fc";
-import { signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, getRedirectResult, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, provider } from '../utils/firebase';
 import axios from "axios"
 import { serverUrl } from '../App';
@@ -12,11 +12,16 @@ function Auth() {
   const dispatch = useDispatch()
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
+  
+  // Email Auth State
+  const [isSignUp, setIsSignUp] = useState(false)
+  const [nameInput, setNameInput] = useState("")
+  const [emailInput, setEmailInput] = useState("")
+  const [passwordInput, setPasswordInput] = useState("")
 
-  const handleGoogleResponse = async (user) => {
-    const name = user.displayName
-    const email = user.email
-    const result = await axios.post(serverUrl + "/api/auth/google" , {name , email},{
+  const handleBackendAuth = async (name, email) => {
+    // using the existing /api/auth/google endpoint as it works for general auth (creates user if not exists)
+    const result = await axios.post(serverUrl + "/api/auth/google" , {name: name || "User" , email},{
       withCredentials:true
     })
     dispatch(setUserData(result.data))
@@ -28,7 +33,7 @@ function Auth() {
         const response = await getRedirectResult(auth)
         if (response?.user) {
           setLoading(true)
-          await handleGoogleResponse(response.user)
+          await handleBackendAuth(response.user.displayName, response.user.email)
         }
       } catch (error) {
         console.error("Redirect auth error:", error)
@@ -43,16 +48,14 @@ function Auth() {
   const handleGoogleAuth = async () => {
     setErrorMsg("")
     try {
-      // Open popup FIRST before any state changes that could break the gesture chain
       const response = await signInWithPopup(auth, provider)
       setLoading(true)
       if (response?.user) {
-        await handleGoogleResponse(response.user)
+        await handleBackendAuth(response.user.displayName, response.user.email)
       }
     } catch (error) {
       console.log("Popup sign in error:", error)
       if (error.code === 'auth/popup-blocked') {
-        // Fall back to redirect if popup is blocked
         try {
           await signInWithRedirect(auth, provider)
         } catch (redirectError) {
@@ -66,8 +69,32 @@ function Auth() {
       }
     }
   }
+
+  const handleEmailAuth = async (e) => {
+    e.preventDefault()
+    setErrorMsg("")
+    setLoading(true)
+    try {
+      if (isSignUp) {
+        const userCredential = await createUserWithEmailAndPassword(auth, emailInput, passwordInput)
+        await handleBackendAuth(nameInput, userCredential.user.email)
+      } else {
+        const userCredential = await signInWithEmailAndPassword(auth, emailInput, passwordInput)
+        await handleBackendAuth(userCredential.user.displayName, userCredential.user.email)
+      }
+    } catch (error) {
+      console.error("Email auth error:", error)
+      // Make error message more user friendly
+      if (error.code === 'auth/email-already-in-use') setErrorMsg("Email is already in use. Please sign in.")
+      else if (error.code === 'auth/invalid-credential') setErrorMsg("Invalid email or password.")
+      else if (error.code === 'auth/weak-password') setErrorMsg("Password should be at least 6 characters.")
+      else setErrorMsg("Authentication failed. Please try again.")
+      setLoading(false)
+    }
+  }
+
   return (
-    <div className='min-h-screen overflow-hidden bg-white text-black px-8'>
+    <div className='min-h-screen overflow-hidden bg-white text-black px-8 pb-10'>
         <motion.header 
         initial = {{opacity: 0 , y:-15}}
         animate = {{opacity:1 , y:0}}
@@ -87,7 +114,7 @@ function Auth() {
 
         </motion.header>
 
-        <main className='max-w-7xl mx-auto py-10 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center'>
+        <main className='max-w-7xl mx-auto mt-10 grid grid-cols-1 lg:grid-cols-2 gap-20 items-start'>
         
         {/* LEFT CONTENT */}
         <motion.div 
@@ -100,32 +127,81 @@ function Auth() {
               bg-clip-text text-transparent'>
                 Unlock Smart <br /> AI Notes
               </h1>
-              <motion.button
-              onClick={handleGoogleAuth}
-              disabled={loading}
-              whileHover={loading ? {} : {
-                y:-10,
-                rotateX:8,
-                rotateY:-8,
-                scale:1.07
-              }}
-              whileTap={loading ? {} : {scale:0.97}}
-              transition={{ type: "spring", stiffness: 200, damping: 18 }}
-               className={`mt-10 px-10 py-3 rounded-xl
-              flex items-center gap-3
-              bg-gradient-to-br from-black/90 via-black/80 to-black/90
-              border border-white/10
-              text-white font-semibold text-lg
-              shadow-[0_25px_60px_rgba(0,0,0,0.7)] ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}>
-                <FcGoogle size={22}/>
-                {loading ? "Signing in..." : "Continue with Google"}
-              </motion.button>
+              
+              <div className="mt-10 max-w-sm">
+                <motion.button
+                onClick={handleGoogleAuth}
+                disabled={loading}
+                whileHover={loading ? {} : {
+                  y:-4,
+                  scale:1.02
+                }}
+                whileTap={loading ? {} : {scale:0.97}}
+                transition={{ type: "spring", stiffness: 200, damping: 18 }}
+                 className={`w-full px-6 py-3 rounded-xl
+                flex items-center justify-center gap-3
+                bg-gradient-to-br from-black/90 via-black/80 to-black/90
+                border border-white/10
+                text-white font-semibold text-lg
+                shadow-[0_15px_30px_rgba(0,0,0,0.4)] ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}>
+                  <FcGoogle size={22}/>
+                  {loading ? "Please wait..." : "Continue with Google"}
+                </motion.button>
 
-              {errorMsg && (
-                <p className="mt-3 text-red-500 text-sm font-medium">{errorMsg}</p>
-              )}
+                <div className="flex items-center gap-4 my-6">
+                  <div className="h-[1px] w-full bg-gray-200"></div>
+                  <span className="text-gray-400 text-sm font-medium">OR</span>
+                  <div className="h-[1px] w-full bg-gray-200"></div>
+                </div>
 
-              <p className=' mt-6 max-w-xl text-lg
+                <form onSubmit={handleEmailAuth} className="flex flex-col gap-4">
+                  {isSignUp && (
+                    <input 
+                      type="text" 
+                      placeholder="Full Name" 
+                      value={nameInput}
+                      onChange={(e)=>setNameInput(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-black placeholder-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+                      required
+                    />
+                  )}
+                  <input 
+                    type="email" 
+                    placeholder="Email address" 
+                    value={emailInput}
+                    onChange={(e)=>setEmailInput(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-black placeholder-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+                    required
+                  />
+                  <input 
+                    type="password" 
+                    placeholder="Password" 
+                    value={passwordInput}
+                    onChange={(e)=>setPasswordInput(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-black placeholder-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+                    required
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={loading}
+                    className={`w-full px-6 py-3 rounded-xl bg-black text-white font-semibold text-lg hover:bg-black/80 transition-colors shadow-lg ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}>
+                    {loading ? "Please wait..." : (isSignUp ? "Sign Up" : "Sign In")}
+                  </button>
+                </form>
+                
+                <p className="mt-4 text-center text-gray-600 text-sm">
+                  {isSignUp ? "Already have an account?" : "Don't have an account?"} 
+                  <button onClick={(e)=>{e.preventDefault(); setIsSignUp(!isSignUp); setErrorMsg("")}} className="ml-1 text-black font-semibold hover:underline">
+                    {isSignUp ? "Sign In" : "Sign Up"}
+                  </button>
+                </p>
+
+                {errorMsg && (
+                  <p className="mt-4 text-red-500 text-sm font-medium text-center">{errorMsg}</p>
+                )}
+              </div>
+
+              <p className=' mt-10 max-w-xl text-lg
               bg-gradient-to-br from-gray-700 via-gray-500/80 to-gray-700
               bg-clip-text text-transparent'>
                 You get <span className="font-semibold">50 FREE credits</span> to create
@@ -137,7 +213,7 @@ function Auth() {
         </motion.div>
 
         {/* RIGHT CONTENT */}
-        <div className='grid grid-cols-1 sm:grid-cols-2 gap-8'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 gap-8 lg:mt-6'>
             <Feature icon="🎁" title="50 Free Credits" des="Start with 50 credits to generate notes without paying."/>
              <Feature icon="📘" title="Exam Notes" des="High-yield, revision-ready exam-oriented notes." />
           <Feature icon="📂" title="Project Notes" des="Well-structured documentation for assignments & projects." />
