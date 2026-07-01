@@ -7,7 +7,7 @@ console.log("VITE_FIREBASE_APIKEY at runtime:", import.meta.env.VITE_FIREBASE_AP
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_APIKEY,
-  authDomain: "examnotesai-5a42a.firebaseapp.com",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "examnotesai-5a42a.firebaseapp.com",
   projectId: "examnotesai-5a42a",
   storageBucket: "examnotesai-5a42a.firebasestorage.app",
   messagingSenderId: "607996421002",
