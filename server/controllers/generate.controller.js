@@ -9,6 +9,7 @@ export const generateNotes = async (req, res) => {
             topic,
             classLevel,
             examType,
+            pagesLength,
             revisionMode = false,
             includeDiagram = false,
             includeChart = false
@@ -33,6 +34,7 @@ export const generateNotes = async (req, res) => {
             topic,
             classLevel,
             examType,
+            pagesLength,
             revisionMode,
             includeDiagram,
             includeChart
@@ -47,12 +49,11 @@ export const generateNotes = async (req, res) => {
             topic,
             classLevel,
             examType,
+            pagesLength,
             revisionMode,
             includeDiagram,
             includeChart,
             content: aiResponse
-
-
         })
 
 

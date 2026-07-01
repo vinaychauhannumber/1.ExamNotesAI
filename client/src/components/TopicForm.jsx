@@ -7,6 +7,7 @@ function TopicForm({ setResult, setLoading, loading, setError }) {
   const [topic, setTopic] = useState("");
   const [classLevel, setClassLevel] = useState("");
   const [examType, setExamType] = useState("");
+  const [pagesLength, setPagesLength] = useState("Short (1-2 pages)");
   const [revisionMode, setRevisionMode] = useState(false);
   const [includeDiagram, setIncludeDiagram] = useState(false);
   const [includeChart, setIncludeChart] = useState(false);
@@ -27,6 +28,7 @@ function TopicForm({ setResult, setLoading, loading, setError }) {
       const result = await generateNotes({topic,
         classLevel,
         examType,
+        pagesLength,
         revisionMode,
         includeDiagram,
         includeChart})
@@ -35,6 +37,7 @@ function TopicForm({ setResult, setLoading, loading, setError }) {
         setClassLevel("")
         setTopic("")
         setExamType("")
+        setPagesLength("Short (1-2 pages)")
         setIncludeChart(false)
         setRevisionMode(false)
         setIncludeDiagram(false)
@@ -132,6 +135,16 @@ function TopicForm({ setResult, setLoading, loading, setError }) {
         onChange={(e) => setExamType(e.target.value)}
         value={examType}
       />
+      <select 
+        className='w-full p-3 rounded-xl bg-white/10 backdrop-blur-lg border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-white/30 [&>option]:bg-gray-800'
+        onChange={(e) => setPagesLength(e.target.value)}
+        value={pagesLength}
+      >
+        <option value="" disabled>Select Notes Length</option>
+        <option value="Short (1-2 pages)">Short (1-2 pages)</option>
+        <option value="Medium (3-5 pages)">Medium (3-5 pages)</option>
+        <option value="Long (6+ pages)">Long (6+ pages)</option>
+      </select>
 
       <div className='flex flex-col md:flex-row gap-6'>
         <Toggle label="Exam Revision Mode" checked={revisionMode} onChange={() => setRevisionMode(!revisionMode)} />

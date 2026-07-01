@@ -2,6 +2,7 @@ export const buildPrompt = ({
   topic,
   classLevel,
   examType,
+  pagesLength,
   revisionMode,
   includeDiagram,
   includeChart
@@ -25,6 +26,7 @@ INPUT:
 Topic: ${topic}
 Class Level: ${classLevel || "Not specified"}
 Exam Type: ${examType || "General"}
+Requested Length: ${pagesLength || "Short (1-2 pages)"}
 Revision Mode: ${revisionMode ? "ON" : "OFF"}
 Include Diagram: ${includeDiagram ? "YES" : "NO"}
 Include Charts: ${includeChart ? "YES" : "NO"}
@@ -63,6 +65,12 @@ IMPORTANCE RULES:
   - ⭐⭐⭐ Frequently Asked Topics
 - All three categories MUST be present
 - Base importance on exam frequency and weightage
+
+LENGTH RULES:
+- The user requested notes length is: ${pagesLength || "Short (1-2 pages)"}
+- If Short: Keep notes concise, focusing on core concepts.
+- If Medium: Provide more detailed explanations, extra examples, and deeper coverage of sub-topics.
+- If Long: Provide extensive details, comprehensive examples, cover edge cases, and ensure the content is very thorough and lengthy.
 
 DIAGRAM RULES:
 - If INCLUDE DIAGRAM is YES:

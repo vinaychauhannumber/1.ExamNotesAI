@@ -13,6 +13,7 @@ const notesSchema = new mongoose.Schema({
 
     classLevel: String,
     examType: String,
+    pagesLength: String,
 
     revisionMode: {
       type: Boolean,
